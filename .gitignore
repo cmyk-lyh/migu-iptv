@@ -1,0 +1,4 @@
+playlist.m3u
+playlist.tmp.m3u
+__pycache__/
+*.pyc

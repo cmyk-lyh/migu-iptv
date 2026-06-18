@@ -1,0 +1,79 @@
+name: Update IPTV playlist
+
+on:
+  workflow_dispatch:
+    inputs:
+      check_streams:
+        description: "Probe streams from GitHub runner before publishing"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+  schedule:
+    - cron: "15 */6 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Build playlist
+        run: |
+          build_args=(
+            build_playlist.py
+            --migu-base
+            http://go.bkpcp.top/mg
+            --migu-csv
+            migu_channels.csv
+            --sources
+            sources.txt
+            --channels
+            channels.csv
+            --logos
+            logos.csv
+            --output
+            playlist.tmp.m3u
+          )
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.check_streams }}" = "true" ]; then
+            build_args+=(--check)
+            build_args+=(--probe-timeout)
+            build_args+=(10)
+          fi
+
+          python "${build_args[@]}"
+
+          channel_count="$(grep -c '^#EXTINF:' playlist.tmp.m3u || true)"
+          echo "Generated ${channel_count} channels"
+
+          if [ "$channel_count" -eq 0 ]; then
+            echo "No channels were generated; keeping existing playlist.m3u"
+            exit 1
+          fi
+
+          mv playlist.tmp.m3u playlist.m3u
+
+      - name: Commit playlist
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add playlist.m3u
+          if git diff --cached --quiet; then
+            echo "playlist.m3u is unchanged"
+          else
+            git commit -m "Update IPTV playlist"
+            git push
+          fi

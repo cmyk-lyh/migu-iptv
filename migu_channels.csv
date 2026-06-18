@@ -1,0 +1,59 @@
+# Migu channel codes
+# code,name,group,logo,tvg_id
+bjws,BRTV 北京卫视,General,https://i.imgur.com/vsktAez.png,BeijingSatelliteTV.cn
+bjys,BRTV 影视,Entertainment,,BeijingFilm.cn
+bjwt,BRTV 文艺,Entertainment,,BeijingLiterature.cn
+bjkj,BRTV 科教,Education,,BeijingScience.cn
+bjsh,BRTV 生活,Lifestyle,,BeijingLife.cn
+bjxw,BRTV 新闻,News,,BeijingNews.cn
+bjqn,BRTV 青年,Entertainment,,BeijingYouth.cn
+bjty,BRTV 体育休闲,Sports,,BeijingSports.cn
+cctv1,CCTV-1 综合,General,,CCTV1.cn
+cctv2,CCTV-2 财经,Finance,,CCTV2.cn
+cctv3,CCTV-3 综艺,Entertainment,,CCTV3.cn
+cctv4,CCTV-4 中文国际,News,,CCTV4.cn
+cctv5,CCTV-5 体育,Sports,,CCTV5.cn
+cctv5p,CCTV-5+ 体育赛事,Sports,,CCTV5Plus.cn
+cctv6,CCTV-6 电影,Movies,,CCTV6.cn
+cctv7,CCTV-7 军事农业,General,,CCTV7.cn
+cctv8,CCTV-8 电视剧,Entertainment,,CCTV8.cn
+cctv9,CCTV-9 纪录,Documentary,,CCTV9.cn
+cctv10,CCTV-10 科教,Education,,CCTV10.cn
+cctv11,CCTV-11 戏曲,Entertainment,,CCTV11.cn
+cctv12,CCTV-12 社会与法,News,,CCTV12.cn
+cctv13,CCTV-13 新闻,News,,CCTV13.cn
+cctv14,CCTV-14 少儿,Kids,,CCTV14.cn
+cctv15,CCTV-15 音乐,Music,,CCTV15.cn
+cctv16,CCTV-16 奥林匹克,Sports,,CCTV16.cn
+cctv17,CCTV-17 农业农村,General,,CCTV17.cn
+dfty,东方卫视,General,,DragonTV.cn
+hnws,湖南卫视,General,,HunanTV.cn
+jsws,江苏卫视,General,,JiangsuTV.cn
+zjws,浙江卫视,General,,ZhejiangTV.cn
+gdws,广东卫视,General,,GuangdongTV.cn
+shdws,深圳卫视,General,,ShenzhenTV.cn
+sdws,山东卫视,General,,ShandongTV.cn
+scws,四川卫视,General,,SichuanTV.cn
+ahws,安徽卫视,General,,AnhuiTV.cn
+hubws,湖北卫视,General,,HubeiTV.cn
+henws,河南卫视,General,,HenanTV.cn
+lnws,辽宁卫视,General,,LiaoningTV.cn
+hljws,黑龙江卫视,General,,HeilongjiangTV.cn
+tjws,天津卫视,General,,TianjinTV.cn
+cqws,重庆卫视,General,,ChongqingTV.cn
+fjjw,东南卫视,General,,SoutheastTV.cn
+gsjd,甘肃卫视,General,,GansuTV.cn
+ynws,云南卫视,General,,YunnanTV.cn
+gxws,广西卫视,General,,GuangxiTV.cn
+nxws,宁夏卫视,General,,NingxiaTV.cn
+xztv,西藏卫视,General,,TibetTV.cn
+xjdj,新疆卫视,General,,XinjiangTV.cn
+nmtv,内蒙古卫视,General,,InnerMongoliaTV.cn
+qhws,青海卫视,General,,QinghaiTV.cn
+shaxtv,陕西卫视,General,,ShaanxiTV.cn
+shanxitv,山西卫视,General,,ShanxiTV.cn
+jxtv,江西卫视,General,,JiangxiTV.cn
+haintv,海南卫视,General,,HainanTV.cn
+gzws,贵州卫视,General,,GuizhouTV.cn
+jlws,吉林卫视,General,,JilinTV.cn
+hmtv,河北卫视,General,,HebeiTV.cn
