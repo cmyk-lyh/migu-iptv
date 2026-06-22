@@ -81,7 +81,7 @@ MIGU_CHANNEL_DB: list[dict[str, str]] = [
     {"code": "haintv", "name": "海南卫视", "group": "General", "tvg_id": "HainanTV.cn"},
     {"code": "gzws", "name": "贵州卫视", "group": "General", "tvg_id": "GuizhouTV.cn"},
     {"code": "jlws", "name": "吉林卫视", "group": "General", "tvg_id": "JilinTV.cn"},
-    {"code": "hmtv", "name": "河北卫视", "group": "General", "tvg_id": "HebeiTV.cn"},
+    {"code": "hebws", "name": "河北卫视", "group": "General", "tvg_id": "HebeiTV.cn"},
     {"code": "movie1", "name": "芒果电影", "group": "Movies", "tvg_id": "MangoMovie.cn"},
 ]
 
