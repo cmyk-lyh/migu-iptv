@@ -403,5 +403,7 @@ http://go.bkpcp.top/mg/gzws
 http://go.bkpcp.top/mg/jlws
 #EXTINF:-1 tvg-id="HebeiTV.cn" group-title="General",河北卫视
 http://go.bkpcp.top/mg/hmtv
+#EXTINF:-1 tvg-id="HebeiTV.cn" group-title="General",河北卫视
+http://go.bkpcp.top/mg/hebws
 #EXTINF:-1 tvg-id="MangoMovie.cn" group-title="Movies",芒果电影
 http://go.bkpcp.top/mg/movie1
