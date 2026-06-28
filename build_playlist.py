@@ -35,7 +35,7 @@ QUALITY_MAP: dict[str, int] = {
     "480": 2,
     "360": 1,
 }
-MIGU_QUALITY = 7
+MIGU_QUALITY = 5
 
 MIGU_PROXY_PATTERNS = [
     re.compile(r"go\.bkpcp\.top/mg/(?P<code>\w+)"),
@@ -454,7 +454,12 @@ def dedup_sort_key(channel: Channel) -> tuple[int, int, int]:
     return (quality, has_24_7, is_migu)
 
 
-def dedupe_by_quality(matched_channels: list[tuple[Channel, dict]]) -> list[Channel]:
+def dedupe_by_quality(
+    matched_channels: list[tuple[Channel, dict]],
+    *,
+    probe: bool = False,
+    probe_timeout: float = 6.0,
+) -> list[Channel]:
     groups: dict[str, list[tuple[Channel, dict]]] = {}
     for channel, entry in matched_channels:
         canonical = entry["name"]
@@ -462,7 +467,19 @@ def dedupe_by_quality(matched_channels: list[tuple[Channel, dict]]) -> list[Chan
 
     result: list[Channel] = []
     for canonical, channel_list in groups.items():
-        best_channel, best_entry = max(channel_list, key=lambda x: dedup_sort_key(x[0]))
+        sorted_list = sorted(channel_list, key=lambda x: dedup_sort_key(x[0]), reverse=True)
+        selected: tuple[Channel, dict] | None = None
+        for channel, entry in sorted_list:
+            if not probe or probe_stream(channel.url, probe_timeout):
+                selected = (channel, entry)
+                break
+            print(f"  dead candidate for {canonical}: {channel.url}", file=sys.stderr)
+
+        if selected is None:
+            print(f"  no reachable source for {canonical}", file=sys.stderr)
+            continue
+
+        best_channel, best_entry = selected
         new_name = best_entry["name"]
         new_group = best_entry["group"] or best_channel.group
         extinf = best_channel.extinf
@@ -576,21 +593,32 @@ def build(args: argparse.Namespace) -> int:
             return 1
 
         if not args.no_quality_dedup:
-            unique = dedupe_by_quality(matched)
+            unique = dedupe_by_quality(matched, probe=args.check, probe_timeout=args.probe_timeout)
             print(f"deduped to {len(unique)} channels by quality", file=sys.stderr)
         else:
             unique = dedupe([c for c, _ in matched])
+
+        if args.check:
+            already_probed = not args.no_quality_dedup
+            if not already_probed:
+                checked: list[Channel] = []
+                for channel in unique:
+                    if probe_stream(channel.url, args.probe_timeout):
+                        checked.append(channel)
+                    else:
+                        print(f"dead or unreachable: {channel.name} {channel.url}", file=sys.stderr)
+                unique = checked
     else:
         unique = dedupe(normalized)
 
-    if args.check:
-        checked: list[Channel] = []
-        for channel in unique:
-            if probe_stream(channel.url, args.probe_timeout):
-                checked.append(channel)
-            else:
-                print(f"dead or unreachable: {channel.name} {channel.url}", file=sys.stderr)
-        unique = checked
+        if args.check:
+            checked: list[Channel] = []
+            for channel in unique:
+                if probe_stream(channel.url, args.probe_timeout):
+                    checked.append(channel)
+                else:
+                    print(f"dead or unreachable: {channel.name} {channel.url}", file=sys.stderr)
+            unique = checked
 
     if args.limit:
         unique = unique[: args.limit]
@@ -617,7 +645,7 @@ def main() -> int:
                         help="disable whitelist filtering")
     parser.add_argument("--no-quality-dedup", action="store_true",
                         help="disable quality-based deduplication")
-    parser.add_argument("--output", default="playlist.m3u", help="output M3U path")
+    parser.add_argument("--output", default="result.m3u", help="output M3U path")
     parser.add_argument("--default-group", default="General", help="default group title")
     parser.add_argument("--timeout", type=float, default=20.0, help="source fetch timeout in seconds")
     parser.add_argument("--check", action="store_true", help="probe each stream, keep only reachable URLs")

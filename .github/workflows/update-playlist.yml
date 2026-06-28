@@ -45,7 +45,7 @@ jobs:
             --logos
             logos.csv
             --output
-            playlist.tmp.m3u
+            result.tmp.m3u
           )
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.check_streams }}" = "true" ]; then
@@ -56,23 +56,23 @@ jobs:
 
           python "${build_args[@]}"
 
-          channel_count="$(grep -c '^#EXTINF:' playlist.tmp.m3u || true)"
+          channel_count="$(grep -c '^#EXTINF:' result.tmp.m3u || true)"
           echo "Generated ${channel_count} channels"
 
           if [ "$channel_count" -eq 0 ]; then
-            echo "No channels were generated; keeping existing playlist.m3u"
+            echo "No channels were generated; keeping existing result.m3u"
             exit 1
           fi
 
-          mv playlist.tmp.m3u playlist.m3u
+          mv result.tmp.m3u result.m3u
 
-      - name: Commit playlist
+      - name: Commit result
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add playlist.m3u
+          git add result.m3u
           if git diff --cached --quiet; then
-            echo "playlist.m3u is unchanged"
+            echo "result.m3u is unchanged"
           else
             git commit -m "Update IPTV playlist"
             git push
