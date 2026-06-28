@@ -1,4 +1,6 @@
 #EXTM3U
+#EXTINF:-1 group-title="动漫",卡酷少儿
+http://223.111.191.105/downflv.brtvcloud.com/kkkkasd/winfr.m3u8
 #EXTINF:-1 group-title="卫视",北京卫视
 http://go.bkpcp.top/mg/bjws
 #EXTINF:-1 group-title="央视",CCTV-1 综合
@@ -20,7 +22,7 @@ http://74.91.26.218:82/live/cctv8hd.m3u8
 #EXTINF:-1 group-title="央视",CCTV-8K 超高清
 http://192.151.150.154/live/cctv8k.m3u8
 #EXTINF:-1 group-title="央视",CCTV-9 纪录
-https://xykt-fix.github.io/Y77.m3u8
+http://go.bkpcp.top/mg/cctv9
 #EXTINF:-1 group-title="央视",CCTV-10 科教
 http://74.91.26.218:82/live/cctv10hd.m3u8
 #EXTINF:-1 group-title="央视",CCTV-11 戏曲
@@ -39,50 +41,58 @@ http://74.91.26.218:82/live/cctv16hd.m3u8
 http://74.91.26.218:82/live/cctv17hd.m3u8
 #EXTINF:-1 group-title="央视",CGTN
 https://amg00405-rakutentv-cgtn-rakuten-i9tar.amagi.tv/master.m3u8
+#EXTINF:-1 group-title="动漫",金鹰卡通
+http://1.24.190.98:10080/hls/51/index.m3u8
 #EXTINF:-1 group-title="卫视",内蒙古卫视
 http://go.bkpcp.top/mg/nmtv
 #EXTINF:-1 group-title="卫视",东南卫视
-http://go.bkpcp.top/mg/fjjw
-#EXTINF:-1 tvg-logo="https://i.imgur.com/example_dfty.png" group-title="卫视",东方卫视
-http://go.bkpcp.top/mg/dfty
+http://118.81.195.79:9003/hls/24/index.m3u8
+#EXTINF:-1 group-title="卫视",东方卫视
+http://118.81.195.79:9003/hls/23/index.m3u8
 #EXTINF:-1 group-title="卫视",云南卫视
-http://go.bkpcp.top/mg/ynws
+https://hwapi.yunshicloud.com/8xughf/e0bx15.m3u8
+#EXTINF:-1 group-title="动漫",优漫卡通
+http://183.207.249.15/PLTV/4/224/3221225933/index.m3u8
 #EXTINF:-1 group-title="卫视",吉林卫视
-http://go.bkpcp.top/mg/jlws
+http://118.81.195.79:9003/hls/34/index.m3u8
+#EXTINF:-1 group-title="动漫",嘉佳卡通
+http://223.110.245.139/PLTV/4/224/3221227009/index.m3u8
 #EXTINF:-1 group-title="卫视",四川卫视
 http://go.bkpcp.top/mg/scws
 #EXTINF:-1 group-title="卫视",天津卫视
-http://go.bkpcp.top/mg/tjws
+http://39.134.115.163:8080/PLTV/88888910/224/3221225698/index.m3u8
 #EXTINF:-1 group-title="卫视",宁夏卫视
 http://go.bkpcp.top/mg/nxws
 #EXTINF:-1 group-title="卫视",安徽卫视
-http://go.bkpcp.top/mg/ahws
+http://118.81.195.79:9003/hls/21/index.m3u8
 #EXTINF:-1 group-title="卫视",山东卫视
-http://go.bkpcp.top/mg/sdws
+http://39.134.115.163:8080/PLTV/88888910/224/3221225697/index.m3u8
 #EXTINF:-1 group-title="卫视",山西卫视
-http://go.bkpcp.top/mg/shanxitv
+http://118.81.195.79:9003/hls/19/index.m3u8
 #EXTINF:-1 group-title="卫视",广东卫视
-http://go.bkpcp.top/mg/gdws
+http://118.81.195.79:9003/hls/26/index.m3u8
 #EXTINF:-1 group-title="卫视",广西卫视
 http://go.bkpcp.top/mg/gxws
 #EXTINF:-1 group-title="卫视",新疆卫视
 http://go.bkpcp.top/mg/xjdj
 #EXTINF:-1 group-title="卫视",江苏卫视
-http://go.bkpcp.top/mg/jsws
+http://39.134.24.166/dbiptv.sn.chinamobile.com/PLTV/88888890/224/3221226200/index.m3u8
 #EXTINF:-1 group-title="卫视",江西卫视
-http://go.bkpcp.top/mg/jxtv
+http://39.134.115.163:8080/PLTV/88888910/224/3221225705/index.m3u8
 #EXTINF:-1 group-title="卫视",河北卫视
-http://go.bkpcp.top/mg/hmtv
+http://118.81.195.79:9003/hls/29/index.m3u8
 #EXTINF:-1 group-title="卫视",河南卫视
-http://go.bkpcp.top/mg/henws
+http://118.81.195.79:9003/hls/30/index.m3u8
 #EXTINF:-1 group-title="卫视",浙江卫视
-http://go.bkpcp.top/mg/zjws
+http://39.134.115.163:8080/PLTV/88888910/224/3221225703/index.m3u8
 #EXTINF:-1 group-title="卫视",海南卫视
 http://go.bkpcp.top/mg/haintv
 #EXTINF:-1 group-title="卫视",深圳卫视
-http://go.bkpcp.top/mg/shdws
+http://39.134.24.166/dbiptv.sn.chinamobile.com/PLTV/88888890/224/3221226205/index.m3u8
 #EXTINF:-1 group-title="卫视",湖北卫视
-http://go.bkpcp.top/mg/hubws
+http://118.81.195.79:9003/hls/32/index.m3u8
+#EXTINF:-1 group-title="动漫",炫动卡通
+http://223.110.245.139/PLTV/4/224/3221226388/index.m3u8
 #EXTINF:-1 group-title="卫视",甘肃卫视
 http://go.bkpcp.top/mg/gsjd
 #EXTINF:-1 group-title="卫视",西藏卫视
@@ -90,15 +100,15 @@ http://go.bkpcp.top/mg/xztv
 #EXTINF:-1 group-title="卫视",贵州卫视
 http://go.bkpcp.top/mg/gzws
 #EXTINF:-1 group-title="卫视",辽宁卫视
-http://go.bkpcp.top/mg/lnws
+http://39.134.39.37/PLTV/88888888/224/3221226209/index.m3u8
 #EXTINF:-1 group-title="卫视",重庆卫视
-http://go.bkpcp.top/mg/cqws
+http://118.81.195.79:9003/hls/22/index.m3u8
 #EXTINF:-1 group-title="卫视",陕西卫视
 http://go.bkpcp.top/mg/shaxtv
 #EXTINF:-1 group-title="卫视",青海卫视
-http://go.bkpcp.top/mg/qhws
+http://live.geermurmt.com/qhws/sd/live.m3u8
 #EXTINF:-1 group-title="卫视",黑龙江卫视
-http://go.bkpcp.top/mg/hljws
+http://118.81.195.79:9003/hls/31/index.m3u8
 #EXTINF:-1 group-title="央视",CCTV-5 体育
 http://go.bkpcp.top/mg/cctv5
 #EXTINF:-1 group-title="央视",CCTV-5+ 体育赛事
