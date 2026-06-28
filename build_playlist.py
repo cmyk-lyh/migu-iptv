@@ -20,6 +20,23 @@ EXTINF_RE = re.compile(r"^#EXTINF:(?P<meta>.*?),(?P<name>.*)$", re.IGNORECASE)
 ATTR_RE = re.compile(r'(?P<key>[\w-]+)="(?P<value>[^"]*)"')
 URL_SCHEMES = {"http", "https", "rtmp", "rtsp"}
 
+RESOLUTION_RE = re.compile(r"\((\d+)[pPiI]\)", re.IGNORECASE)
+NOT_24_7_RE = re.compile(r"\[Not 24/7\]", re.IGNORECASE)
+GEO_BLOCKED_RE = re.compile(r"\[Geo-blocked\]", re.IGNORECASE)
+
+QUALITY_MAP: dict[str, int] = {
+    "4k": 10,
+    "8k": 10,
+    "2160": 10,
+    "1080": 8,
+    "720": 6,
+    "576": 4,
+    "540": 3,
+    "480": 2,
+    "360": 1,
+}
+MIGU_QUALITY = 7
+
 MIGU_PROXY_PATTERNS = [
     re.compile(r"go\.bkpcp\.top/mg/(?P<code>\w+)"),
 ]
@@ -255,6 +272,18 @@ def escape_attr(value: str) -> str:
     return value.replace("\\", "\\\\").replace('"', '\\"')
 
 
+def strip_tags(name: str) -> str:
+    name = RESOLUTION_RE.sub("", name)
+    name = NOT_24_7_RE.sub("", name)
+    name = GEO_BLOCKED_RE.sub("", name)
+    name = re.sub(r"\s+", " ", name).strip()
+    return name
+
+
+def normalize_for_match(name: str) -> str:
+    return strip_tags(name).casefold()
+
+
 def normalize_channel(channel: Channel, default_group: str, logo_map: dict[str, str]) -> Channel:
     group = channel.group or default_group
     extinf = channel.extinf
@@ -328,15 +357,163 @@ def dedupe(channels: Iterable[Channel]) -> list[Channel]:
     return result
 
 
-def probe_url(url: str, timeout: float) -> bool:
+# ======================================================================
+# Whitelist filtering
+# ======================================================================
+
+def read_whitelist(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+
+    whitelist: list[dict] = []
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        filtered = (line for line in handle if line.strip() and not line.lstrip().startswith("#"))
+        reader = csv.DictReader(filtered, fieldnames=["name", "group", "code", "match"])
+        for row in reader:
+            name = (row.get("name") or "").strip()
+            if not name:
+                continue
+            patterns = [p.strip() for p in (row.get("match") or "").split("|") if p.strip()]
+            whitelist.append({
+                "name": name,
+                "group": (row.get("group") or "").strip(),
+                "code": (row.get("code") or "").strip(),
+                "match": patterns,
+            })
+    return whitelist
+
+
+def match_whitelist(channel: Channel, whitelist_entries: list[dict]) -> dict | None:
+    normalized_name = normalize_for_match(channel.name)
+
+    for entry in whitelist_entries:
+        code = entry.get("code", "")
+        if code:
+            for proxy_re in MIGU_PROXY_PATTERNS:
+                m = proxy_re.search(channel.url)
+                if m and m.group("code") == code:
+                    return entry
+
+        for pattern in entry.get("match", []):
+            if not pattern:
+                continue
+            pattern_lower = pattern.casefold()
+            if pattern_lower not in normalized_name:
+                continue
+            idx = normalized_name.index(pattern_lower)
+            after = normalized_name[idx + len(pattern_lower):]
+            if after and not after[0].isspace():
+                continue
+            return entry
+
+    return None
+
+
+def filter_whitelist(channels: Iterable[Channel], whitelist: list[dict]) -> list[tuple[Channel, dict]]:
+    result: list[tuple[Channel, dict]] = []
+    for channel in channels:
+        entry = match_whitelist(channel, whitelist)
+        if entry:
+            result.append((channel, entry))
+    return result
+
+
+# ======================================================================
+# Quality-based deduplication
+# ======================================================================
+
+def extract_quality(channel: Channel) -> int:
+    name = channel.name
+    url = channel.url
+
+    name_lower = name.casefold()
+    is_migu = any(p.search(url) for p in MIGU_PROXY_PATTERNS)
+
+    if "4k" in name_lower or "2160p" in name_lower or "8k" in name_lower:
+        return 10
+    if "1080p" in name_lower:
+        return 8
+    if is_migu:
+        return MIGU_QUALITY
+    if "720p" in name_lower:
+        return 6
+
+    res_match = RESOLUTION_RE.search(name)
+    if res_match:
+        res = res_match.group(1)
+        if res in QUALITY_MAP:
+            return QUALITY_MAP[res]
+
+    return 5
+
+
+def dedup_sort_key(channel: Channel) -> tuple[int, int, int]:
+    quality = extract_quality(channel)
+    has_24_7 = 0 if NOT_24_7_RE.search(channel.name) else 1
+    is_migu = 1 if any(p.search(channel.url) for p in MIGU_PROXY_PATTERNS) else 0
+    return (quality, has_24_7, is_migu)
+
+
+def dedupe_by_quality(matched_channels: list[tuple[Channel, dict]]) -> list[Channel]:
+    groups: dict[str, list[tuple[Channel, dict]]] = {}
+    for channel, entry in matched_channels:
+        canonical = entry["name"]
+        groups.setdefault(canonical, []).append((channel, entry))
+
+    result: list[Channel] = []
+    for canonical, channel_list in groups.items():
+        best_channel, best_entry = max(channel_list, key=lambda x: dedup_sort_key(x[0]))
+        new_name = best_entry["name"]
+        new_group = best_entry["group"] or best_channel.group
+        extinf = best_channel.extinf
+        extinf = re.sub(r'\s+group-title="[^"]*"', "", extinf)
+        extinf = re.sub(r'\s+tvg-id="[^"]*"', "", extinf)
+        if "," in extinf:
+            meta = extinf.rsplit(",", 1)[0]
+            extinf = f"{meta},{new_name}"
+        extinf = add_extinf_attr(extinf, "group-title", new_group)
+        result.append(Channel(name=new_name, url=best_channel.url, extinf=extinf, group=new_group))
+
+    return result
+
+
+# ======================================================================
+# Stream probing
+# ======================================================================
+
+def probe_stream(url: str, timeout: float) -> bool:
     request = urllib.request.Request(url, headers={"User-Agent": "m3u-subscription-builder/1.0"})
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             status = getattr(response, "status", 200)
-            return 200 <= status < 400
+            if not (200 <= status < 400):
+                return False
+
+            is_hls = (
+                url.lower().endswith(".m3u8")
+                or "mpegurl" in response.headers.get("Content-Type", "")
+            )
+            if is_hls:
+                content = response.read().decode("utf-8", errors="replace")
+                if not content.strip():
+                    return False
+                if "#EXTINF:" in content:
+                    return True
+                if "#EXT-X-STREAM-INF:" in content:
+                    return True
+                non_comment = [l for l in content.splitlines() if l.strip() and not l.startswith("#")]
+                if non_comment:
+                    return True
+                return False
+
+            return True
     except (urllib.error.URLError, TimeoutError, OSError):
         return False
 
+
+# ======================================================================
+# Output
+# ======================================================================
 
 def write_m3u(path: Path, channels: Iterable[Channel]) -> None:
     lines = ["#EXTM3U"]
@@ -347,20 +524,28 @@ def write_m3u(path: Path, channels: Iterable[Channel]) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
+# ======================================================================
+# Build pipeline
+# ======================================================================
+
 def build(args: argparse.Namespace) -> int:
     all_channels: list[Channel] = []
 
-    source_urls = read_lines(Path(args.sources))
-    for source_url in source_urls:
-        if not is_url(source_url):
-            print(f"skip invalid source: {source_url}", file=sys.stderr)
+    source_entries = read_lines(Path(args.sources))
+    for source_entry in source_entries:
+        if is_url(source_entry):
+            try:
+                text = fetch_text(source_entry, args.timeout)
+            except (urllib.error.URLError, TimeoutError, OSError) as exc:
+                print(f"fetch failed: {source_entry} ({exc})", file=sys.stderr)
+                continue
+        elif Path(source_entry).exists():
+            text = Path(source_entry).read_text(encoding="utf-8")
+            print(f"read local file: {source_entry}", file=sys.stderr)
+        else:
+            print(f"skip invalid source: {source_entry}", file=sys.stderr)
             continue
-        try:
-            text = fetch_text(source_url, args.timeout)
-        except (urllib.error.URLError, TimeoutError, OSError) as exc:
-            print(f"fetch failed: {source_url} ({exc})", file=sys.stderr)
-            continue
-        all_channels.extend(parse_m3u(text, source_url))
+        all_channels.extend(parse_m3u(text, source_entry))
 
     if args.migu_csv:
         migu_csv_path = Path(args.migu_csv)
@@ -375,12 +560,33 @@ def build(args: argparse.Namespace) -> int:
     all_channels.extend(read_manual_channels(Path(args.channels)))
     logo_map = read_logo_map(Path(args.logos))
     normalized = [normalize_channel(channel, args.default_group, logo_map) for channel in all_channels]
-    unique = dedupe(normalized)
+
+    whitelist: list[dict] = []
+    if not args.no_whitelist:
+        wl_path = Path(args.whitelist)
+        if wl_path.exists():
+            whitelist = read_whitelist(wl_path)
+            print(f"loaded {len(whitelist)} whitelist entries from {args.whitelist}", file=sys.stderr)
+
+    if whitelist:
+        matched = filter_whitelist(normalized, whitelist)
+        print(f"matched {len(matched)} channels to whitelist", file=sys.stderr)
+        if not matched:
+            print("no channels matched whitelist; aborting", file=sys.stderr)
+            return 1
+
+        if not args.no_quality_dedup:
+            unique = dedupe_by_quality(matched)
+            print(f"deduped to {len(unique)} channels by quality", file=sys.stderr)
+        else:
+            unique = dedupe([c for c, _ in matched])
+    else:
+        unique = dedupe(normalized)
 
     if args.check:
         checked: list[Channel] = []
         for channel in unique:
-            if probe_url(channel.url, args.probe_timeout):
+            if probe_stream(channel.url, args.probe_timeout):
                 checked.append(channel)
             else:
                 print(f"dead or unreachable: {channel.name} {channel.url}", file=sys.stderr)
@@ -405,6 +611,12 @@ def main() -> int:
                         help="include built-in Migu channel database (default: True)")
     parser.add_argument("--no-migu-channels", action="store_false", dest="migu_channels",
                         help="skip built-in Migu channel database")
+    parser.add_argument("--whitelist", default="whitelist.csv",
+                        help="channel whitelist CSV (name,group,code,match)")
+    parser.add_argument("--no-whitelist", action="store_true",
+                        help="disable whitelist filtering")
+    parser.add_argument("--no-quality-dedup", action="store_true",
+                        help="disable quality-based deduplication")
     parser.add_argument("--output", default="playlist.m3u", help="output M3U path")
     parser.add_argument("--default-group", default="General", help="default group title")
     parser.add_argument("--timeout", type=float, default=20.0, help="source fetch timeout in seconds")

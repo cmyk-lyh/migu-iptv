@@ -1,3 +1,6 @@
 # Authorized/public M3U playlist URLs
 # Lines starting with # are ignored.
-https://iptv-org.github.io/iptv/countries/cn.m3u
+# Local cache (also used when remote fetch fails)
+cn_streams.m3u
+# Remote sources
+https://raw.githubusercontent.com/iptv-org/iptv/master/streams/cn.m3u
