@@ -126,33 +126,33 @@ jobs:
           print(f'已生成 enhanced_channels_{timestamp}.m3u')
           "
 
-      - name: 提交更改
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "M3U Updater"
-          
-          # 查找生成的文件
-          enhanced_file=$(ls enhanced_channels_*.m3u | head -1)
-          
-          if [ -n "$enhanced_file" ]; then
-            git add "$enhanced_file"
-            git add iptv-cn.m3u
-          
-            # 获取更新原因
-            reason=\"${{ github.event.inputs.reason || '定时更新 (每6小时)' }}\"
-          
-            git commit -m "自动更新 M3U 频道: $(date)
-          
-            更新原因: $reason
-            执行频率: 每6小时更新一次"
-            git push
-            echo "已推送更新"
-          else
-            echo "没有需要更新的文件"
-          fi
-
       - name: 上传结果
         uses: actions/upload-artifact@v3
         with:
-          name: enhanced-channels
+          name: enhanced-channels-${{ github.run_number }}
           path: enhanced_channels_*.m3u
+
+      - name: 创建Release（可选）
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: update-${{ github.run_number }}
+          release_name: M3U Update - ${{ github.run_number }}
+          body: |
+            ## 自动更新 M3U 频道列表
+            
+            **更新时间**: ${{ github.run_number }}
+            **执行方式**: 手动触发
+            
+            ### 更新内容
+            - 从 iptv-org 获取最新频道数据
+            - 过滤卫视频道、央视、动漫、电影等
+            - 合并新旧频道
+            - 生成增强版 M3U 文件
+            
+            ### 使用方法
+            下载 `enhanced_channels_*.m3u` 文件即可使用。
+          draft: false
+          prerelease: false
