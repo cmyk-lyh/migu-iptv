@@ -34,45 +34,37 @@ jobs:
         run: |
           build_args=(
             build_playlist.py
-            --migu-base
-            http://go.bkpcp.top/mg
-            --migu-csv
-            migu_channels.csv
-            --sources
-            sources.txt
-            --channels
-            channels.csv
-            --logos
-            logos.csv
+            --preset
+            china-tv
+            --probe-timeout
+            5
             --output
-            result.tmp.m3u
+            playlist.tmp.m3u
           )
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.check_streams }}" = "true" ]; then
             build_args+=(--check)
-            build_args+=(--probe-timeout)
-            build_args+=(10)
           fi
 
           python "${build_args[@]}"
 
-          channel_count="$(grep -c '^#EXTINF:' result.tmp.m3u || true)"
+          channel_count="$(grep -c '^#EXTINF:' playlist.tmp.m3u || true)"
           echo "Generated ${channel_count} channels"
 
           if [ "$channel_count" -eq 0 ]; then
-            echo "No channels were generated; keeping existing result.m3u"
+            echo "No channels were generated; keeping existing playlist.m3u"
             exit 1
           fi
 
-          mv result.tmp.m3u result.m3u
+          mv playlist.tmp.m3u playlist.m3u
 
-      - name: Commit result
+      - name: Commit playlist
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add result.m3u
+          git add playlist.m3u
           if git diff --cached --quiet; then
-            echo "result.m3u is unchanged"
+            echo "playlist.m3u is unchanged"
           else
             git commit -m "Update IPTV playlist"
             git push

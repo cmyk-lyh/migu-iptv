@@ -1,0 +1,97 @@
+name: Update M3U Channels
+
+on:
+  schedule:
+    # 每天凌晨2点执行 (UTC时间)
+    - cron: '0 2 * * *'
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  update-m3u:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4
+        
+    - name: Fetch IPTV data
+      run: |
+        python3 -c "
+        import urllib.request
+        url = 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/cn.m3u'
+        with urllib.request.urlopen(url) as response:
+            content = response.read().decode('utf-8')
+        with open('iptv-cn.m3u', 'w', encoding='utf-8') as f:
+            f.write(content)
+        print('Fetched IPTV data successfully')
+        "
+        
+    - name: Process M3U files
+      run: |
+        python3 -c "
+        import re
+        
+        def parse_m3u(file_path):
+            channels = []
+            current_channel = {}
+            with open(file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('#EXTINF:'):
+                        match = re.search(r'#EXTINF:-1.*?group-title=\"([^\"]*)\",(.+)', line)
+                        if match:
+                            current_channel = {
+                                'group': match.group(1),
+                                'name': match.group(2).strip()
+                            }
+                    elif line.startswith('http'):
+                        if current_channel:
+                            current_channel['url'] = line
+                            channels.append(current_channel)
+                            current_channel = {}
+            return channels
+        
+        # Read existing channels
+        existing = parse_m3u('channels.m3u')
+        
+        # Read IPTV channels
+        iptv = parse_m3u('iptv-cn.m3u')
+        
+        # Combine and filter
+        target_groups = ['卫视', '央视', '动漫', '电影', '少儿', '纪录片', '体育']
+        filtered = [ch for ch in iptv if any(g in ch.get('group', '') for g in target_groups)]
+        
+        # Generate new M3U
+        m3u_content = '#EXTM3U\\n'
+        for ch in existing + filtered:
+            extinf = f'#EXTINF:-1 group-title=\"{ch[\"group\"]}\",{ch[\"name\"]}'
+            m3u_content += extinf + '\\n'
+            m3u_content += ch.get('url', '# No URL') + '\\n\\n'
+        
+        with open('enhanced_channels.m3u', 'w', encoding='utf-8') as f:
+            f.write(m3u_content)
+        
+        print(f'Generated enhanced_channels.m3u with {len(existing + filtered)} channels')
+        "
+        
+    - name: Commit and push
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add enhanced_channels.m3u
+        if ! git diff --staged --quiet; then
+          git commit -m "Auto-update M3U channels: $(date)"
+          git push
+        else
+          echo "No changes to commit"
+        fi

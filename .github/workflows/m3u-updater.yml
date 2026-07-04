@@ -1,0 +1,156 @@
+name: M3U 自动更新
+
+on:
+  # 每天凌晨2点执行 (UTC时间，对应北京时间上午10点)
+  schedule:
+    - cron: '0 2 * * *'
+  # 允许手动触发
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: '更新原因'
+        required: false
+        default: '手动更新'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 设置 Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4
+        
+    - name: 获取 IPTV 数据
+      run: |
+        python3 -c "
+        import urllib.request
+        url = 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/cn.m3u'
+        print('正在下载 IPTV 数据...')
+        with urllib.request.urlopen(url) as response:
+            content = response.read().decode('utf-8')
+        with open('iptv-cn.m3u', 'w', encoding='utf-8') as f:
+            f.write(content)
+        print('下载完成')
+        "
+        
+    - name: 处理 M3U 文件
+      run: |
+        python3 -c "
+        import re
+        from datetime import datetime
+        
+        def parse_m3u(file_path):
+            channels = []
+            current_channel = {}
+            with open(file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('#EXTINF:'):
+                        match = re.search(r'#EXTINF:-1.*?group-title=\"([^\"]*)\",(.+)', line)
+                        if match:
+                            current_channel = {
+                                'group': match.group(1),
+                                'name': match.group(2).strip()
+                            }
+                    elif line.startswith('http'):
+                        if current_channel:
+                            current_channel['url'] = line
+                            channels.append(current_channel)
+                            current_channel = {}
+            return channels
+        
+        # 读取现有频道
+        existing = parse_m3u('channels.m3u')
+        print(f'现有频道: {len(existing)}')
+        
+        # 读取 IPTV 频道
+        iptv_lines = open('iptv-cn.m3u', 'r', encoding='utf-8').read().strip().split('\n')
+        iptv = []
+        current_channel = {}
+        
+        for line in iptv_lines:
+            line = line.strip()
+            if line.startswith('#EXTINF:'):
+                match = re.search(r'#EXTINF:-1.*?group-title=\"([^\"]*)\",(.+)', line)
+                if match:
+                    current_channel = {
+                        'group': match.group(1),
+                        'name': match.group(2).strip()
+                    }
+            elif line.startswith('http'):
+                if current_channel:
+                    current_channel['url'] = line
+                    iptv.append(current_channel)
+                    current_channel = {}
+        
+        print(f'IPTV 频道总数: {len(iptv)}')
+        
+        # 过滤目标频道
+        target_groups = ['卫视', '央视', '动漫', '电影', '少儿', '纪录片', '体育', '娱乐', '戏曲']
+        filtered = []
+        
+        for ch in iptv:
+            group = ch.get('group', '')
+            if any(g in group for g in target_groups):
+                filtered.append(ch)
+        
+        print(f'过滤后频道: {len(filtered)}')
+        
+        # 生成新的 M3U
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        m3u_content = '#EXTM3U\\n'
+        m3u_content += f'# 更新时间: {timestamp}\\n'
+        m3u_content += f'# 总频道数: {len(existing + filtered)}\\n'
+        m3u_content += f'# 原有频道: {len(existing)}\\n'
+        m3u_content += f'# 新增频道: {len(filtered)}\\n\\n'
+        
+        for ch in existing + filtered:
+            extinf = f'#EXTINF:-1 group-title=\"{ch[\"group\"]}\",{ch[\"name\"]}'
+            m3u_content += extinf + '\\n'
+            m3u_content += ch.get('url', '# 无 URL') + '\\n\\n'
+        
+        with open(f'enhanced_channels_{timestamp}.m3u', 'w', encoding='utf-8') as f:
+            f.write(m3u_content)
+        
+        print(f'已生成 enhanced_channels_{timestamp}.m3u')
+        "
+        
+    - name: 提交更改
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "M3U Updater"
+        
+        # 查找生成的文件
+        enhanced_file=$(ls enhanced_channels_*.m3u | head -1)
+        
+        if [ -n "$enhanced_file" ]; then
+          git add "$enhanced_file"
+          git add iptv-cn.m3u
+          
+          # 获取更新原因
+          reason=\"${{ github.event.inputs.reason || '定时更新' }}\"
+          
+          git commit -m "自动更新 M3U 频道: $(date)
+          
+          更新原因: $reason"
+          git push
+          echo "已推送更新"
+        else
+          echo "没有需要更新的文件"
+        fi
+        
+    - name: 上传结果
+      uses: actions/upload-artifact@v3
+      with:
+        name: enhanced-channels
+        path: enhanced_channels_*.m3u
