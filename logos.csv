@@ -1,5 +1,7 @@
-# Logo mappings
+# Optional channel logos in CSV format:
 # name,logo
-BRTV 北京卫视,https://i.imgur.com/vsktAez.png
-东方卫视,https://i.imgur.com/example_dfty.png
-湖南卫视,https://i.imgur.com/example_hnws.png
+#
+# Use logos you have permission to use. The name should match the channel name.
+# Example:
+# CCTV-1,https://example.com/cctv1.png
+

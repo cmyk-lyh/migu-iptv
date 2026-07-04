@@ -1,3 +1,6 @@
-# Manual channels
+# Optional manual channels in CSV format:
 # name,url,group,logo,tvg_id
-BRTV 北京卫视 (1080p),http://go.bkpcp.top/mg/bjws,General,https://i.imgur.com/vsktAez.png,BeijingSatelliteTV.cn
+#
+# Example:
+# My Camera,http://192.168.1.10/live.m3u8,Home,,
+
